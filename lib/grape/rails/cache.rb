@@ -1,5 +1,5 @@
-require "grape/rails/cache/version"
-require "grape/rails/cache/formatter"
+require 'grape/rails/cache/version'
+require 'grape/rails/cache/formatter'
 
 module Grape
   module Rails
@@ -7,34 +7,32 @@ module Grape
       extend ActiveSupport::Concern
 
       included do
-        formatter :json, Grape::Rails::Cache::JsonFormatter
-
         helpers do
           def compare_etag(etag)
             etag = Digest::SHA1.hexdigest(etag.to_s)
-            error!("Not Modified", 304) if request.headers["If-None-Match"] == etag
+            error!('Not Modified', 304) if request.headers['If-None-Match'] == etag
 
-            header "ETag", etag
+            header 'ETag', etag
           end
 
           # Based on actionpack/lib/action_controller/base.rb, line 1216
           def expires_in(seconds, options = {})
             cache_control = []
             if seconds == 0
-              cache_control << "no-cache"
+              cache_control << 'no-cache'
             else
               cache_control << "max-age=#{seconds}"
             end
             if options[:public]
-              cache_control << "public"
+              cache_control << 'public'
             else
-              cache_control << "private"
+              cache_control << 'private'
             end
 
             # This allows for additional headers to be passed through like 'max-stale' => 5.hours
-            cache_control += options.symbolize_keys.reject{|k,v| k == :public || k == :private }.map{ |k,v| v == true ? k.to_s : "#{k.to_s}=#{v.to_s}"}
+            cache_control += options.symbolize_keys.reject{|k,v| k == :public || k == :private }.map{ |k,v| v ? k.to_s : "#{k.to_s}=#{v.to_s}"}
 
-            header "Cache-Control", cache_control.join(', ')
+            header 'Cache-Control', cache_control.join(', ')
           end
 
           def default_expire_time
@@ -56,7 +54,7 @@ module Grape
             # Try to fetch from server side cache
             cache_store_expire_time = opts[:cache_store_expires_in] || opts[:expires_in] || default_expire_time
             ::Rails.cache.fetch(cache_key, raw: true, expires_in: cache_store_expire_time) do
-              block.call.to_json
+              block.call
             end
           end
         end
